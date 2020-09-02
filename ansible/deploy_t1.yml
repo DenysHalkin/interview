@@ -1,0 +1,9 @@
+---
+  - name: Deploy containers 
+    hosts: tier1
+    gather_facts: false
+    vars_files:
+      - "{{ vault_file }}"
+    roles:
+      - role: deploy_t1
+        force_deploy: true

@@ -1,0 +1,15 @@
+containers:
+    image_1:
+      name: "image_1"
+      image: "123456678890.dkr.ecr.eu-west-2.amazonaws.com/image_1"
+      port: "8080:80"
+
+    image_2:
+      name: "image_2"
+      image: "123456678890.dkr.ecr.eu-west-2.amazonaws.com/image_2"
+      port: "8081:80"
+
+    image_3:
+      name: "image_3"
+      image: "123456678890.dkr.ecr.eu-west-2.amazonaws.com/image_3"
+      port: "8082:80"

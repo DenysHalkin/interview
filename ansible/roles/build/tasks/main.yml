@@ -1,0 +1,34 @@
+---
+  - name: SingIn ECR
+    win_shell: Invoke-Expression -Command (Get-ECRLoginCommand -Region eu-west-2).Command
+    changed_when: false
+
+  - name: Create directory structure
+    win_file:
+      path: C:\docker\{{item.value.name}}
+      state: directory
+    with_dict: "{{containers}}"
+
+  - name: Create a index.html from a Jinja2 template
+    win_template:
+      src: templates/index.html.j2
+      dest: C:\docker\{{item.value.name}}\index.html
+    with_dict: "{{containers}}"
+
+  - name: Copy dockerfile
+    win_copy:
+      src: files/dockerfile
+      dest: c:\docker\{{item.value.name}}\
+    with_dict: "{{containers}}"
+
+  - name: Build image 
+    win_shell: docker build -t "{{item.value.name}}" --rm C:\docker\{{item.value.name}}
+    register: docker_build
+    with_dict: "{{containers}}"
+  
+  - name: Push image 
+    win_shell: |
+        docker tag {{item.value.name}}:latest {{item.value.image}}:latest
+        docker push {{item.value.image}}:latest
+    with_dict: "{{containers}}"
+    when: docker_build is succeeded

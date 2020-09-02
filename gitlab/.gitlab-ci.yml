@@ -1,0 +1,94 @@
+stages:
+  - publish
+  - test
+  - package
+  - deploy
+
+variables:
+  Region: 'us-west-2'
+  Profile: 'interview'
+  ServiceName: 'interview'
+  ClusterArn: 'cluster:arn'
+  AwsStorage: 'ci-repo-us-west-2'
+
+publish/frontend:
+  stage: publish
+  tags:
+    - ubuntu
+  script:
+    - pwsh ./publishFrontend.ps1
+  artifacts:
+    paths:
+      - Publish/Frontend
+    expire_in: 1 hour
+
+publish/backend:
+  stage: publish
+  tags:
+    - ubuntu
+  script:
+    - pwsh ./publish.ps1
+  artifacts:
+    paths:
+      - Publish/Backend
+    expire_in: 1 hour
+
+test/unitTests:
+  stage: test
+  tags:
+    - ubuntu
+  script:
+    - pwsh ./unitTests.ps1
+  allow_failure: true
+  artifacts:
+    when: always
+    paths:
+      - UnitTestResult
+    expire_in: 1 hour
+
+package/zip:
+  stage: package
+  tags:
+    - ubuntu
+  script:
+    - pwsh ./package.ps1 -pipeline $CI_PIPELINE_ID -s3StorageName $AwsStorage
+  artifacts:
+    name: $ServiceName
+    paths:
+      - Publish/
+    expire_in: 1 hour
+  dependencies:
+    - publish/frontend
+    - publish/backend
+
+
+package/docker:
+  stage: package
+  variables:
+    repository: 'astastastassat'
+  tags:
+    - ubuntu
+  script:
+    - |
+      docker image build -t ${repository}:latest .
+      docker tag ${repository}:latest ${repository}:$CI_PIPELINE_ID
+      docker push ${repository}:latest
+      docker push ${repository}:$CI_PIPELINE_ID
+      docker image ls --filter reference=$repository --format '{{.Repository}}:{{.Tag}}' | docker image rm
+  dependencies:
+    - publish/frontend
+    - publish/backend
+
+deploy:
+  stage: deploy
+  dependencies:
+    - package/zip
+    - package/docker
+  script:
+    - |
+      aws ecs update-service --cluster $ClusterArn --service $ServiceName --force-new-deployment --profile $Profile --region $Region
+      aws ecs wait services-stable --cluster $ClusterArn --services $ServiceNAme --profile $Profile --region $Region
+  only:
+    - master
+  tags:
+    - ubuntu

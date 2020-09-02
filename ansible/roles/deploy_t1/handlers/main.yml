@@ -1,0 +1,20 @@
+#-------------Deploy containers-------------------------------------------------------
+######################################################################################
+- name: Deploy container image_1
+  win_shell: |
+      (docker stop $(docker ps -a -q -f name={{containers.image_1.name}})) 2> $null
+      (docker rm $(docker ps -a -q -f name={{containers.image_1.name}})) 2> $null
+      docker run -d -p {{containers.image_1.port}} --name {{containers.image_1.name}} {{containers.image_1.image}}
+
+- name: Deploy container image_2
+  win_shell: |
+      (docker stop $(docker ps -a -q -f name={{containers.image_2.name}})) 2> $null
+      (docker rm $(docker ps -a -q -f name={{containers.image_2.name}})) 2> $null
+      docker run -d -p {{containers.image_2.port}} --name {{containers.image_2.name}} {{containers.image_2.image}}
+
+- name: Deploy container image_3
+  win_shell: |
+      (docker stop $(docker ps -a -q -f name={{containers.image_3.name}})) 2> $null
+      (docker rm $(docker ps -a -q -f name={{containers.image_3.name}})) 2> $null
+      docker run -d -p {{containers.image_3.port}} --name {{containers.image_3.name}} {{containers.image_3.image}}
+######################################################################################

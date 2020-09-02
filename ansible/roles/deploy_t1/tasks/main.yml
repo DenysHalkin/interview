@@ -1,0 +1,50 @@
+---
+
+  - name: SingIn ECR
+    win_shell: Invoke-Expression -Command (Get-ECRLoginCommand -Region eu-west-2).Command
+    changed_when: false
+
+#--------------Download images from ECR-----------------------------------------------
+######################################################################################
+  - name: Pull image image_1
+    win_shell: docker pull {{containers.image_1}}
+    register: image_1_status
+    changed_when: (('Image is up to date' in image_1_status.stdout) | bool == false) or force_deploy
+    notify: Deploy container image_1
+
+  - name: Pull image image_2
+    win_shell: docker pull {{containers.image_2.image}}
+    register: image_2_status
+    changed_when: (('Image is up to date' in image_2_status.stdout) | bool == false) or force_deploy
+    notify: Deploy container image_2
+
+  - name: Pull image image_3
+    win_shell: docker pull {{containers.image_3.image}}
+    register: image_3_status
+    changed_when: (('Image is up to date' in image_3_status.stdout) | bool == false) or force_deploy
+    notify: Deploy container image_3
+######################################################################################
+
+#--------------Check containers-----------------------------------------------
+######################################################################################
+  - name: Check image_1 presence and status
+    win_shell: docker ps -a -q -f name={{containers.image_1.name}} -f status=running
+    register: image_1_status
+    changed_when: image_1_status.stdout_lines.0 is not defined
+    notify: Deploy container image_1
+    when: image_1_status is not changed
+
+  - name: Check image_2 presence and status
+    win_shell: docker ps -a -q -f name={{containers.image_2.name}} -f status=running
+    register: image_2_status
+    changed_when: image_2_status.stdout_lines.0 is not defined
+    notify: Deploy container image_2
+    when: image_2_status is not changed
+
+  - name: Check image_3 presence and status
+    win_shell: docker ps -a -q -f name={{containers.image_3.name}} -f status=running
+    register: image_3_status
+    changed_when: image_3_status.stdout_lines.0 is not defined
+    notify: Deploy container image_3
+    when: image_3_status is not changed
+######################################################################################
